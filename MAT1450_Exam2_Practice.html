@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAT 1450 Exam 2 Practice</title>
+</head>
+<body style="margin:0;background:#EEF2F7;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1D2B44;font-size:16px;line-height:1.5;">
+<div style="max-width:900px;margin:0 auto;padding:20px 14px 60px;">
+
+  <div style="background:#1D2B44;color:#fff;border-radius:12px;padding:22px 24px;margin-bottom:14px;">
+    <div style="font-size:14px;color:#B9C7DA;margin-bottom:4px;">MAT 1450 Statistics</div>
+    <div style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:700;line-height:1.2;">Exam 2 practice: probability and discrete distributions</div>
+    <div style="font-size:15px;color:#D6E0EC;margin-top:8px;">Every problem is generated with new numbers, so you can practice as many times as you like.</div>
+  </div>
+
+  <div id="tabs" style="margin-bottom:14px;"></div>
+  <div id="view"></div>
+</div>
+
+<script>
+/* ---------- style tokens (applied inline) ---------- */
+var C={ink:'#1D2B44',teal:'#0F766E',tealBg:'#E3F2EF',line:'#D3DCE7',ok:'#15803D',okBg:'#E8F6EC',bad:'#B42318',badBg:'#FDECEA',amber:'#7A5200',amberBg:'#FFF4D9',muted:'#55657C',soft:'#F5F8FB'};
+var ST={
+  card:'background:#fff;border:1px solid '+C.line+';border-radius:10px;padding:20px 22px;margin:0 0 16px;',
+  btn:'display:inline-block;background:'+C.teal+';color:#fff;border:2px solid '+C.teal+';border-radius:6px;padding:8px 16px;font-size:15px;font-weight:600;cursor:pointer;margin:6px 8px 0 0;font-family:inherit;',
+  btn2:'display:inline-block;background:#fff;color:'+C.teal+';border:2px solid '+C.teal+';border-radius:6px;padding:8px 16px;font-size:15px;font-weight:600;cursor:pointer;margin:6px 8px 0 0;font-family:inherit;',
+  input:'width:130px;padding:7px 9px;font-size:16px;border:2px solid #9AA8BA;border-radius:6px;font-family:inherit;color:'+C.ink+';',
+  table:'border-collapse:collapse;margin:10px 0;font-size:15px;',
+  th:'border:1px solid '+C.line+';background:#EDF2F8;padding:6px 12px;text-align:center;font-weight:600;',
+  td:'border:1px solid '+C.line+';padding:6px 12px;text-align:center;',
+  wrap:'overflow-x:auto;max-width:100%;'
+};
+
+/* ---------- helpers ---------- */
+function ri(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=b;b=a%b;a=t;}return a||1;}
+function fr(n,d){var g=gcd(n,d);n=n/g;d=d/g;return d===1?String(n):n+'/'+d;}
+function rd(x,k){var p=Math.pow(10,k);return Math.round((x+1e-12)*p)/p;}
+function f(x,k){if(k===undefined)k=4;var s=String(rd(x,k));return s.replace('-','\u2212');}
+function choose(n,k){var r=1;for(var i=1;i<=k;i++){r=r*(n-k+i)/i;}return r;}
+function partition(total,k){var cuts=[];while(cuts.length<k-1){var c=ri(1,total-1);if(cuts.indexOf(c)<0)cuts.push(c);}cuts.sort(function(a,b){return a-b;});var out=[],prev=0;for(var i=0;i<cuts.length;i++){out.push(cuts[i]-prev);prev=cuts[i];}out.push(total-prev);return out;}
+function sum(a){var s=0;for(var i=0;i<a.length;i++)s+=a[i];return s;}
+function tbl(head,rows,firstBold){
+  var h='<div style="'+ST.wrap+'"><table style="'+ST.table+'"><tr>';
+  head.forEach(function(x){h+='<th style="'+ST.th+'">'+x+'</th>';});h+='</tr>';
+  rows.forEach(function(r){h+='<tr>';r.forEach(function(x,i){h+='<td style="'+ST.td+(firstBold&&i===0?'font-weight:600;background:#F7F9FC;':'')+'">'+x+'</td>';});h+='</tr>';});
+  return h+'</table></div>';
+}
+function hl(s){return '<div style="background:'+C.tealBg+';border-left:4px solid '+C.teal+';padding:8px 12px;margin:10px 0;border-radius:4px;">'+s+'</div>';}
+function P(s){return '<i>P</i>('+s+')';}
+var X='<i>x</i>', MU='\u03bc', SIG='\u03c3';
+
+/* ---------- answer parsing ---------- */
+function parseNum(s){
+  if(s===null||s===undefined)return NaN;
+  s=String(s).trim().replace(/\u2212/g,'-').replace(/,/g,'').replace(/\s+/g,'');
+  if(s==='')return NaN;
+  var pct=false;
+  if(s.charAt(s.length-1)==='%'){pct=true;s=s.slice(0,-1);}
+  var v;
+  if(s.indexOf('/')>=0){var p=s.split('/');if(p.length!==2)return NaN;var a=Number(p[0]),b=Number(p[1]);if(p[0]===''||p[1]===''||!isFinite(a)||!isFinite(b)||b===0)return NaN;v=a/b;}
+  else{v=Number(s);if(!isFinite(v))return NaN;}
+  return pct?v/100:v;
+}
+
+/* ---------- question generators ---------- */
+var TITLES=['Probability of a missing sample point','Complement of an event','Probability vocabulary','Interpreting probability values','Simple probability','Discrete or continuous','Valid probability distribution','Mean of a discrete distribution','Mean, variance, and standard deviation','Tree diagram and probability distribution','Venn diagram','Probability of a complement','Contingency table','Mutually exclusive events','Conditional probability from a table','Independent events','Addition rule','True or false'];
+var PTS=[5,5,5,5,5,5,5,7,7,8,8,5,6,5,5,5,5,4];
+
+function numPart(label,ans,tol,kind){return {kind:kind||'num',label:label,ans:ans,tol:tol||0.005};}
+function mcPart(label,opts,correct){return {kind:'mc',label:label,opts:opts,correct:correct};}
+
+var GEN=[];
+
+/* 1 missing sample point */
+GEN[0]=function(){
+  var d=pick([10,12,14,15,16,18,20,24]),a,b,c,n;
+  do{var m=Math.floor(d/4);a=ri(1,m);b=ri(1,m);c=ri(1,m);n=d-a-b-c;}while(n<1);
+  var L=['A','B','C','D'],miss=ri(0,3),given=[a,b,c],gi=0,rows=[],shown=[];
+  for(var i=0;i<4;i++){if(i===miss){rows.push([L[i],'?']);}else{rows.push([L[i],given[gi]+'/'+d]);shown.push(given[gi]+'/'+d);gi++;}}
+  var cand=[a+b+c,n+1,n-1,n+2,n-2,1].filter(function(v,i,s){return v>0&&v!==n&&v<=2*d&&s.indexOf(v)===i;});
+  cand=shuffle(cand).slice(0,3);
+  var opts=shuffle([n].concat(cand)),correct=opts.indexOf(n);
+  return {
+    html:'An experiment has four sample points: A, B, C, and D. The probabilities of three of them are shown in the table.'+tbl(['Sample point','Probability'],rows,true)+'What is '+P(L[miss])+'?',
+    parts:[mcPart('',opts.map(function(v){return fr(v,d);}),correct)],
+    hint:'The probabilities of all sample points in a sample space must add to 1.',
+    sol:'The sample point probabilities must add to 1.<br>'+P(L[miss])+' = 1 \u2212 ('+shown.join(' + ')+') = 1 \u2212 '+(a+b+c)+'/'+d+' = '+n+'/'+d+(fr(n,d)!==n+'/'+d?' = '+fr(n,d):'')+hl('Answer: '+fr(n,d))
+  };
+};
+
+/* 2 complement of an event */
+GEN[1]=function(){
+  var sets=[{t:'A bag contains pieces of candy in these colors:',s:'one piece of candy',c:['red','orange','yellow','green','blue','brown']},
+            {t:'A jar contains jelly beans in these flavors:',s:'one jelly bean',c:['cherry','lemon','lime','grape','orange','licorice']},
+            {t:'A box contains marbles in these colors:',s:'one marble',c:['red','white','black','green','blue','purple']}];
+  var S=pick(sets),cnt=S.c.map(function(){return ri(1,6)*5;}),T=sum(cnt);
+  var ix=shuffle([0,1,2,3,4,5]).slice(0,2),x=ix[0],y=ix[1],not=T-cnt[x]-cnt[y],ans=not/T;
+  return {
+    html:S.t+tbl(S.c.map(function(c){return c.charAt(0).toUpperCase()+c.slice(1);}),[cnt])+'If '+S.s+' is selected at random, what is the probability that it is <b>not</b> '+S.c[x]+' or '+S.c[y]+'?',
+    parts:[numPart('Probability',ans)],
+    hint:'Find the total first. Then count everything that is not '+S.c[x]+' or '+S.c[y]+' (or use 1 minus the probability that it is).',
+    sol:'Total: '+cnt.join(' + ')+' = '+T+'<br>Not '+S.c[x]+' or '+S.c[y]+': '+T+' \u2212 ('+cnt[x]+' + '+cnt[y]+') = '+not+'<br>P = '+not+'/'+T+' = '+fr(not,T)+hl('Answer: '+f(ans)+' ('+fr(not,T)+')')
+  };
+};
+
+/* 3 vocabulary */
+GEN[2]=function(){
+  var bank=[
+    ['The set of all possible outcomes of an experiment is called the ___.','sample space'],
+    ['A process that leads to one of several well-defined results is called a(n) ___.','experiment'],
+    ['A collection of one or more outcomes (a subset of the sample space) is called a(n) ___.','event'],
+    ['A single possible result of an experiment is called a(n) ___.','sample point'],
+    ['All the outcomes in the sample space that are not in event A make up the ___ of A.','complement'],
+    ['Two events that cannot happen at the same time are called ___ events.','mutually exclusive'],
+    ['Two events where one happening does not change the probability of the other are called ___ events.','independent'],
+    ['A variable whose numerical value is determined by the outcome of a random experiment is called a ___.','random variable'],
+    ['A list or table of every value of a random variable with its probability is called a ___.','probability distribution']];
+  var k=ri(0,bank.length-1),others=shuffle(bank.filter(function(_,i){return i!==k;})).slice(0,3).map(function(b){return b[1];});
+  var opts=shuffle([bank[k][1]].concat(others));
+  return {
+    html:bank[k][0].replace('___','<span style="display:inline-block;min-width:90px;border-bottom:2px solid '+C.ink+';">&nbsp;</span>'),
+    parts:[mcPart('',opts,opts.indexOf(bank[k][1]))],
+    hint:'Think about whether the definition describes one result, a group of results, all results, or a relationship between events.',
+    sol:hl('Answer: '+bank[k][1])
+  };
+};
+
+/* 4 interpreting probability */
+GEN[3]=function(){
+  var sc=[['is almost certain to happen',0.99],['is very unlikely to happen',0.02],['is just as likely to happen as not to happen',0.5],['cannot happen',0],['is certain to happen',1],['is likely, but not certain, to happen',0.8]];
+  var s=pick(sc),pool=[0.01,0.15,0.3,0.5,0.7,0.85,0.99].filter(function(v){return Math.abs(v-s[1])>=0.4;});
+  var w=pick(pool),neg=-pick([0.25,0.5,0.99]),over=pick([1.01,1.25,1.5]);
+  var vals=shuffle([s[1],w,neg,over]);
+  return {
+    html:'Which value could be the probability of an event that '+s[0]+'?',
+    parts:[mcPart('',vals.map(function(v){return f(v);}),vals.indexOf(s[1]))],
+    hint:'Every probability is between 0 and 1. Values near 0 mean unlikely; values near 1 mean likely.',
+    sol:'A probability must be between 0 and 1, so '+f(neg)+' and '+f(over)+' are not possible. An event that '+s[0]+' has a probability '+(s[1]===0?'of 0':s[1]===1?'of 1':s[1]===0.5?'of 0.5':s[1]>0.5?'close to 1':'close to 0')+'.'+hl('Answer: '+f(s[1]))
+  };
+};
+
+/* 5 simple probability */
+GEN[4]=function(){
+  var sets=[['A drawer holds highlighters:','highlighter',['yellow','blue','pink','green']],['A box holds pens:','pen',['black','blue','red','green']],['A bowl holds candies:','candy',['mint','cherry','lemon','grape']]];
+  var S=pick(sets),cnt=S[2].map(function(){return ri(2,15);}),T=sum(cnt),k=ri(0,3);
+  return {
+    html:S[0]+' '+S[2].map(function(c,i){return cnt[i]+' '+c;}).join(', ')+'. One '+S[1]+' is chosen at random. What is the probability that it is '+S[2][k]+'?',
+    parts:[numPart('P('+S[2][k]+')',cnt[k]/T)],
+    hint:'Probability = (number of '+S[2][k]+' items) \u00f7 (total number of items).',
+    sol:'Total: '+cnt.join(' + ')+' = '+T+'<br>P('+S[2][k]+') = '+cnt[k]+'/'+T+(fr(cnt[k],T)!==cnt[k]+'/'+T?' = '+fr(cnt[k],T):'')+' \u2248 '+f(cnt[k]/T)+hl('Answer: '+fr(cnt[k],T)+' \u2248 '+f(cnt[k]/T))
+  };
+};
+
+/* 6 discrete or continuous */
+GEN[5]=function(){
+  var d=['the number of cups of coffee a caf\u00e9 sells in a day','the number of students absent from class','the number of heads in 10 coin tosses','the number of cars in a parking lot','the number of defective bulbs in a box of 50','the number of text messages a person sends in an hour','the number of goals scored in a soccer match','the number of customers waiting in line'];
+  var c=['the time it takes to finish an exam','the weight of a newborn baby','the height of a randomly chosen student','the amount of rain that falls in a day','the temperature at noon','the length of a phone call','the number of gallons of gas pumped into a car','the distance a person commutes to work'];
+  var isD=Math.random()<0.5,v=isD?pick(d):pick(c);
+  return {
+    html:'Let <i>X</i> = '+v+'. What type of random variable is <i>X</i>?',
+    parts:[mcPart('',['continuous','discrete'],isD?1:0)],
+    hint:'Ask yourself: is this value counted (0, 1, 2, ...) or measured on a scale where any value in an interval is possible?',
+    sol:(isD?'This value is a count (0, 1, 2, ...), so the variable has separate, countable values.':'This value is measured, so it can take any value in an interval (including decimals).')+hl('Answer: '+(isD?'discrete':'continuous'))
+  };
+};
+
+/* 7 valid distribution */
+GEN[6]=function(){
+  var st=ri(-2,1),xs=[],i;for(i=0;i<5;i++)xs.push(st+i);
+  var ps=partition(20,5).map(function(u){return u*0.05;}),kind=ri(0,2);
+  if(kind===1){i=ri(0,4);var dl=pick([0.05,0.1,-0.05,-0.1]);if(ps[i]+dl<=0)dl=0.1;ps[i]+=dl;}
+  if(kind===2){i=ri(0,4);var j=(i+ri(1,4))%5,neg=pick([0.05,0.1,0.2]);ps[j]+=ps[i]+neg;ps[i]=-neg;}
+  ps=ps.map(function(p){return rd(p,2);});
+  var s=rd(sum(ps),2),inRange=ps.every(function(p){return p>=0&&p<=1;});
+  var opts=['Valid: every probability is between 0 and 1, and they add to 1','Not valid: the probabilities do not add to 1','Not valid: at least one probability is not between 0 and 1'];
+  return {
+    html:'Is the table below a valid probability distribution?'+tbl([X].concat(xs.map(function(v){return f(v);})),[['<i>P</i>(<i>x</i>)'].concat(ps.map(function(p){return f(p);}))],true),
+    parts:[mcPart('',opts,kind)],
+    hint:'Check two conditions: (1) every P(x) is between 0 and 1, and (2) the probabilities add to exactly 1.',
+    sol:'Condition 1, each probability between 0 and 1: '+(inRange?'met.':'<b>not met</b> (a probability is negative or larger than 1).')+'<br>Condition 2, the sum is 1: '+ps.map(function(p){return f(p);}).join(' + ')+' = '+f(s)+(Math.abs(s-1)<1e-9?', met.':', <b>not met</b>.')+hl('Answer: '+opts[kind])
+  };
+};
+
+/* 8 mean */
+GEN[7]=function(){
+  if(Math.random()<0.3){
+    var n=pick([4,6,8,10]),xs=[],t=[];for(var i=1;i<=n;i++){xs.push(i);t.push(i+'(1/'+n+')');}
+    var mu=(n+1)/2;
+    return {
+      html:'A fair '+n+'-sided die numbered 1 to '+n+' is rolled once. Let <i>X</i> be the number that lands face up. Each value has probability 1/'+n+'. Find the mean (expected value) of <i>X</i>.',
+      parts:[numPart(MU+' =',mu)],
+      hint:MU+' = \u03a3 x \u00b7 P(x). Multiply each value by its probability, then add.',
+      sol:MU+' = \u03a3 '+X+' \u00b7 '+P(X)+' = '+t.join(' + ')+' = '+(n*(n+1)/2)+'/'+n+hl('Answer: '+MU+' = '+f(mu))
+    };
+  }
+  var ctx=pick([['cars owned by a household',[0,1,2,3]],['classes a student takes this term',[1,2,3,4,5]],['defective items in a shipment',[0,1,2,3,4]],['calls a help desk receives in a minute',[0,1,2,3,4]],['dollars won in a raffle game',[0,5,10,20]]]);
+  var xs=ctx[1],ps=partition(20,xs.length).map(function(u){return rd(u*0.05,2);});
+  var prods=xs.map(function(x,i){return x*ps[i];}),mu=rd(sum(prods),4);
+  return {
+    html:'Let <i>X</i> = the number of '+ctx[0]+'. Its probability distribution is shown below. Find the mean of <i>X</i>.'+tbl([X].concat(xs),[['<i>P</i>(<i>x</i>)'].concat(ps.map(function(p){return f(p);}))],true),
+    parts:[numPart(MU+' =',mu)],
+    hint:MU+' = \u03a3 x \u00b7 P(x). Multiply each value by its probability, then add the products.',
+    sol:MU+' = '+xs.map(function(x,i){return x+'('+f(ps[i])+')';}).join(' + ')+' = '+prods.map(function(p){return f(p);}).join(' + ')+' = '+f(mu)+hl('Answer: '+MU+' = '+f(mu))
+  };
+};
+
+/* 9 mean, variance, sd */
+GEN[8]=function(){
+  var st=pick([0,1]),xs=[];for(var i=0;i<5;i++)xs.push(st+i);
+  var ps=partition(20,5).map(function(u){return rd(u*0.05,2);});
+  var mu=rd(sum(xs.map(function(x,i){return x*ps[i];})),4);
+  var dev=xs.map(function(x){return rd(x-mu,4);}),sq=dev.map(function(d){return rd(d*d,6);}),w=sq.map(function(s,i){return rd(s*ps[i],6);});
+  var v=rd(sum(w),4),sd=Math.sqrt(sum(w));
+  var rows=xs.map(function(x,i){return [x,f(ps[i],2),f(x*ps[i]),f(dev[i]),f(sq[i],6),f(w[i],6)];});
+  rows.push(['<b>Total</b>','1.00','<b>'+f(mu)+'</b>','','','<b>'+f(v)+'</b>']);
+  return {
+    html:'The random variable <i>X</i> has the probability distribution below.'+tbl([X].concat(xs),[['<i>P</i>(<i>x</i>)'].concat(ps.map(function(p){return f(p,2);}))],true)+'Find the mean, the variance, and the standard deviation.',
+    parts:[numPart('a. Mean '+MU,mu),numPart('b. Variance '+SIG+'\u00b2',v,0.01),numPart('c. Standard deviation '+SIG+' (2 decimals)',rd(sd,4),0.01)],
+    hint:'First find '+MU+' = \u03a3 x\u00b7P(x). Then '+SIG+'\u00b2 = \u03a3 (x \u2212 '+MU+')\u00b2\u00b7P(x), and '+SIG+' = \u221a('+SIG+'\u00b2). A work table with columns x, P(x), x\u00b7P(x), x \u2212 '+MU+', (x \u2212 '+MU+')\u00b2, (x \u2212 '+MU+')\u00b2\u00b7P(x) keeps it organized.',
+    sol:'Work table:'+tbl([X,'<i>P</i>(<i>x</i>)',X+'\u00b7<i>P</i>(<i>x</i>)',X+' \u2212 '+MU,'('+X+' \u2212 '+MU+')\u00b2','('+X+' \u2212 '+MU+')\u00b2\u00b7<i>P</i>(<i>x</i>)'],rows)+
+      'a. '+MU+' = \u03a3 x\u00b7P(x) = '+f(mu)+'<br>b. '+SIG+'\u00b2 = \u03a3 (x \u2212 '+MU+')\u00b2\u00b7P(x) = '+f(v)+'<br>c. '+SIG+' = \u221a'+f(v)+' \u2248 '+f(sd)+
+      hl('Answer: a. '+MU+' = '+f(mu)+' &nbsp; b. '+SIG+'\u00b2 = '+f(v)+' &nbsp; c. '+SIG+' \u2248 '+f(sd,2))+
+      '<div style="color:'+C.muted+';font-size:14px;">Shortcut check: \u03a3 x\u00b2\u00b7P(x) \u2212 '+MU+'\u00b2 = '+f(sum(xs.map(function(x,i){return x*x*ps[i];})))+' \u2212 '+f(mu*mu)+' = '+f(v)+'</div>'
+  };
+};
+
+function treeSVG(n,a,b){
+  var lines=[],nodes=[],leaf=0,dx=105,dy=28,W=60+n*dx+70,H=Math.pow(2,n)*dy+16;
+  function node(path,level){
+    var x=24+level*dx,y;
+    if(level===n){y=22+leaf*dy;leaf++;nodes.push('<text x="'+(x+18)+'" y="'+(y+5)+'" font-size="14" fill="'+C.ink+'" font-weight="600">'+path+'</text>');}
+    else{
+      var y1=node(path+a,level+1),y2=node(path+b,level+1),cx=24+(level+1)*dx;y=(y1+y2)/2;
+      [y1,y2].forEach(function(cy){lines.push('<line x1="'+x+'" y1="'+y+'" x2="'+cx+'" y2="'+cy+'" stroke="#8FA3BA" stroke-width="1.5"/>');lines.push('<text x="'+((x+cx)/2-8)+'" y="'+((y+cy)/2-4)+'" font-size="11" fill="'+C.muted+'">1/2</text>');});
+    }
+    if(level===0)nodes.push('<circle cx="'+x+'" cy="'+y+'" r="5" fill="'+C.ink+'"/>');
+    else nodes.push('<circle cx="'+x+'" cy="'+y+'" r="11" fill="#fff" stroke="'+C.teal+'" stroke-width="2"/><text x="'+x+'" y="'+(y+5)+'" font-size="13" text-anchor="middle" fill="'+C.teal+'" font-weight="700">'+path.charAt(path.length-1)+'</text>');
+    return y;
+  }
+  node('',0);
+  return '<div style="'+ST.wrap+'"><svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Tree diagram">'+lines.join('')+nodes.join('')+'</svg></div>';
+}
+
+/* 10 tree diagram */
+GEN[9]=function(){
+  var n=pick([2,3,3]),ctx=pick([{d:'A fair coin is tossed '+n+' times.',a:'H',b:'T',x:'the number of heads'},{d:'A family has '+n+' children. Assume boys and girls are equally likely.',a:'G',b:'B',x:'the number of girls'},{d:'A student guesses on '+n+' true/false questions, so each guess is right or wrong with probability 1/2.',a:'R',b:'W',x:'the number of right answers'}]);
+  var outs=[],tot=Math.pow(2,n);
+  for(var m=0;m<tot;m++){var s='';for(var j=n-1;j>=0;j--){s+=((m>>j)&1)?ctx.b:ctx.a;}outs.push(s);}
+  var parts=[numPart('a. How many outcomes are in the sample space?',tot,0,'int')],hd=[X],r1=['Outcomes'],r2=['<i>P</i>(<i>X</i> = <i>x</i>)'];
+  for(var k=0;k<=n;k++){
+    parts.push(numPart('P(X = '+k+')',choose(n,k)/tot));
+    hd.push(k);
+    r1.push(outs.filter(function(o){return o.split(ctx.a).length-1===k;}).join(', '));
+    r2.push(choose(n,k)+'/'+tot);
+  }
+  return {
+    html:ctx.d+' Let <i>X</i> = '+ctx.x+'. Draw a tree diagram, list the sample space, and find the probability distribution of <i>X</i>. Use '+ctx.a+' and '+ctx.b+' for the branches.',
+    parts:parts,
+    hint:'Each stage has 2 branches, so there are 2 \u00d7 2'+(n===3?' \u00d7 2':'')+' outcomes. List them all, count how many contain each number of '+ctx.a+"'s, and divide by the total.",
+    sol:'Tree diagram (each branch has probability 1/2):'+treeSVG(n,ctx.a,ctx.b)+'S = { '+outs.join(', ')+' }, so there are '+tot+' equally likely outcomes.'+tbl(hd,[r1,r2],true)+'The probabilities add to '+tot+'/'+tot+' = 1, and every probability is between 0 and 1.'+hl('Answer: '+tot+' outcomes; P(X = 0, \u2026, '+n+') = '+r2.slice(1).join(', '))
+  };
+};
+
+function vennSVG(an,bn,ao,both,bo,nei,N){
+  return '<div style="'+ST.wrap+'"><svg width="380" height="230" viewBox="0 0 380 230" role="img" aria-label="Venn diagram">'+
+    '<rect x="2" y="2" width="376" height="226" rx="6" fill="#fff" stroke="#8FA3BA" stroke-width="1.5"/>'+
+    '<circle cx="145" cy="118" r="80" fill="'+C.teal+'" fill-opacity="0.16" stroke="'+C.teal+'" stroke-width="2"/>'+
+    '<circle cx="235" cy="118" r="80" fill="#3B5BA5" fill-opacity="0.16" stroke="#3B5BA5" stroke-width="2"/>'+
+    '<text x="105" y="28" font-size="13" fill="'+C.teal+'" font-weight="700" text-anchor="middle">'+an+'</text>'+
+    '<text x="275" y="28" font-size="13" fill="#3B5BA5" font-weight="700" text-anchor="middle">'+bn+'</text>'+
+    '<text x="110" y="124" font-size="20" font-weight="700" text-anchor="middle" fill="'+C.ink+'">'+ao+'</text>'+
+    '<text x="190" y="124" font-size="20" font-weight="700" text-anchor="middle" fill="'+C.ink+'">'+both+'</text>'+
+    '<text x="270" y="124" font-size="20" font-weight="700" text-anchor="middle" fill="'+C.ink+'">'+bo+'</text>'+
+    '<text x="350" y="214" font-size="20" font-weight="700" text-anchor="middle" fill="'+C.ink+'">'+nei+'</text>'+
+    '<text x="14" y="218" font-size="12" fill="'+C.muted+'">Total = '+N+'</text></svg></div>';
+}
+
+/* 11 Venn diagram */
+GEN[10]=function(){
+  var ctx=pick([['students','take','Statistics','Biology'],['customers','subscribe to','Netflix','Hulu'],['employees','drink','coffee','tea'],['students','play','basketball','soccer']]);
+  var both=ri(3,10),ao=ri(5,16),bo=ri(4,14),nei=ri(3,15),N=both+ao+bo+nei,A=ao+both,B=bo+both;
+  return {
+    html:'In a group of '+N+' '+ctx[0]+', '+A+' '+ctx[1]+' '+ctx[2]+', '+B+' '+ctx[1]+' '+ctx[3]+', and '+both+' '+ctx[1]+' both. Let A = '+ctx[1]+' '+ctx[2]+' and B = '+ctx[1]+' '+ctx[3]+'. Draw a Venn diagram, then answer the questions for a randomly chosen person from this group.',
+    parts:[numPart('a. How many '+ctx[1]+' neither?',nei,0,'int'),numPart('b. P(A)',A/N),numPart('c. P(A or B)',(ao+both+bo)/N),numPart('d. P(A and B)',both/N)],
+    hint:'Fill in the overlap first ('+both+'). Then subtract it from each circle\u2019s total to get the "only" regions. Whatever is left from '+N+' goes outside both circles.',
+    sol:'Overlap: '+both+'. '+ctx[2]+' only: '+A+' \u2212 '+both+' = '+ao+'. '+ctx[3]+' only: '+B+' \u2212 '+both+' = '+bo+'. Neither: '+N+' \u2212 ('+ao+' + '+both+' + '+bo+') = '+nei+'.'+vennSVG(ctx[2],ctx[3],ao,both,bo,nei,N)+
+      'b. P(A) = '+A+'/'+N+' \u2248 '+f(A/N)+'<br>c. P(A or B) = ('+ao+' + '+both+' + '+bo+')/'+N+' = '+(ao+both+bo)+'/'+N+' \u2248 '+f((ao+both+bo)/N)+'<br>d. P(A and B) = '+both+'/'+N+' \u2248 '+f(both/N)+
+      hl('Answer: a. '+nei+' &nbsp; b. '+f(A/N)+' &nbsp; c. '+f((ao+both+bo)/N)+' &nbsp; d. '+f(both/N))
+  };
+};
+
+/* 12 complement from counts */
+GEN[11]=function(){
+  var ctx=pick([['students at a college','are 30 or older','younger than 30'],['employees at a company','work remotely','not working remotely'],['voters in a town','are under 25','25 or older'],['patients at a clinic','have a morning appointment','not in the morning']]);
+  var N=ri(4,16)*50,k=ri(Math.round(N*0.1),Math.round(N*0.6)),ans=(N-k)/N;
+  return {
+    html:'Of '+N+' '+ctx[0]+', '+k+' '+ctx[1]+'. If one is chosen at random, what is the probability that the person is '+ctx[2]+'?',
+    parts:[numPart('Probability',ans)],
+    hint:'Use the complement rule: P(not A) = 1 \u2212 P(A).',
+    sol:N+' \u2212 '+k+' = '+(N-k)+', so P = '+(N-k)+'/'+N+'. Or: 1 \u2212 '+k+'/'+N+' = 1 \u2212 '+f(k/N)+' = '+f(ans)+'.'+hl('Answer: '+f(ans))
+  };
+};
+
+/* 13 contingency table */
+GEN[12]=function(){
+  var ctx=pick([{t:'A survey asked adults whether they prefer dogs or cats.',r:['Male','Female'],c:['Dog','Cat']},{t:'Students were asked whether they have a part-time job.',r:['Full-time student','Part-time student'],c:['Has a job','No job']},{t:'Shoppers were asked whether they would recommend a store.',r:['Online','In-store'],c:['Yes','No']}]);
+  var n=[[ri(12,60),ri(12,60)],[ri(12,60),ri(12,60)]],R=[n[0][0]+n[0][1],n[1][0]+n[1][1]],K=[n[0][0]+n[1][0],n[0][1]+n[1][1]],G=R[0]+R[1];
+  var lc=function(s){return s.toLowerCase();};
+  var types=shuffle([0,1,2,3]).slice(0,2),parts=[],sols=[],L=['a','b'];
+  types.forEach(function(t,q){
+    var i=ri(0,1),j=ri(0,1),lab,num,den;
+    if(t===0){lab='P('+lc(ctx.c[j])+' | '+lc(ctx.r[i])+')';num=n[i][j];den=R[i];}
+    if(t===1){lab='P('+lc(ctx.c[j])+')';num=K[j];den=G;}
+    if(t===2){lab='P('+lc(ctx.r[i])+' | '+lc(ctx.c[j])+')';num=n[i][j];den=K[j];}
+    if(t===3){lab='P('+lc(ctx.r[i])+' and '+lc(ctx.c[j])+')';num=n[i][j];den=G;}
+    parts.push(numPart(L[q]+'. '+lab,num/den));
+    sols.push(L[q]+'. '+lab+' = '+num+'/'+den+' \u2248 '+f(num/den)+(t===0||t===2?' (restrict to the given group\u2019s total)':''));
+  });
+  return {
+    html:ctx.t+' One person is chosen at random.'+tbl(['',ctx.c[0],ctx.c[1]],[[ctx.r[0],n[0][0],n[0][1]],[ctx.r[1],n[1][0],n[1][1]]],true),
+    parts:parts,
+    hint:'Add row and column totals first. For "A | B", the denominator is the total for B only (the condition). For a plain probability, use the grand total.',
+    sol:'Totals:'+tbl(['',ctx.c[0],ctx.c[1],'Total'],[[ctx.r[0],n[0][0],n[0][1],R[0]],[ctx.r[1],n[1][0],n[1][1],R[1]],['Total',K[0],K[1],G]],true)+sols.join('<br>')+hl('Answer: '+parts.map(function(p,i){return L[i]+'. '+f(p.ans);}).join(' &nbsp; '))
+  };
+};
+
+/* 14 mutually exclusive */
+GEN[13]=function(){
+  var pc=ri(10,60),pd=ri(5,Math.min(90-pc,50));
+  if(Math.random()<0.6){
+    return {html:'Events C and D are mutually exclusive. P(C) = '+f(pc/100)+' and P(D) = '+f(pd/100)+'. Find P(C or D).',
+      parts:[numPart('P(C or D)',(pc+pd)/100)],
+      hint:'Mutually exclusive events cannot happen together, so P(C and D) = 0.',
+      sol:'For mutually exclusive events, P(C or D) = P(C) + P(D) = '+f(pc/100)+' + '+f(pd/100)+' = '+f((pc+pd)/100)+hl('Answer: '+f((pc+pd)/100))};
+  }
+  return {html:'Events C and D are mutually exclusive. P(C or D) = '+f((pc+pd)/100)+' and P(C) = '+f(pc/100)+'. Find P(D).',
+    parts:[numPart('P(D)',pd/100)],
+    hint:'For mutually exclusive events, P(C or D) = P(C) + P(D). Solve for P(D).',
+    sol:'P(D) = P(C or D) \u2212 P(C) = '+f((pc+pd)/100)+' \u2212 '+f(pc/100)+' = '+f(pd/100)+hl('Answer: '+f(pd/100))};
+};
+
+/* 15 conditional from table (MC) */
+GEN[14]=function(){
+  var rows=['High school only','Bachelor\u2019s degree','Graduate degree'],cols=['Excellent','Good','Fair'],n,R,K,G,r,c,vals,ok;
+  do{
+    n=[[0,0,0],[0,0,0],[0,0,0]].map(function(a){return a.map(function(){return ri(3,40);});});
+    R=n.map(sum);K=[0,1,2].map(function(j){return n[0][j]+n[1][j]+n[2][j];});G=sum(R);r=ri(0,2);c=ri(0,2);
+    vals=[[n[r][c],K[c]],[n[r][c],R[r]],[n[r][c],G],[K[c],G]];
+    ok=true;for(var i=0;i<4;i++)for(var j=i+1;j<4;j++)if(Math.abs(vals[i][0]/vals[i][1]-vals[j][0]/vals[j][1])<1e-9)ok=false;
+  }while(!ok);
+  var order=shuffle([0,1,2,3]);
+  return {
+    html:'A company rated its managers by performance and recorded their highest level of education.'+tbl(['Education','Excellent','Good','Fair'],rows.map(function(e,i){return [e].concat(n[i]);}),true)+'A manager is chosen at random. Given that the manager is rated <b>'+cols[c]+'</b>, what is the probability that the manager has a <b>'+rows[r].toLowerCase()+'</b> education?',
+    parts:[mcPart('',order.map(function(k){return vals[k][0]+'/'+vals[k][1];}),order.indexOf(0))],
+    hint:'"Given that the manager is rated '+cols[c]+'" means you only look at the '+cols[c]+' column. Its total is the denominator.',
+    sol:'Restrict to the '+K[c]+' managers rated '+cols[c]+' ('+n[0][c]+' + '+n[1][c]+' + '+n[2][c]+'). Of those, '+n[r][c]+' have a '+rows[r].toLowerCase()+' education.<br>P = '+n[r][c]+'/'+K[c]+' \u2248 '+f(n[r][c]/K[c])+hl('Answer: '+n[r][c]+'/'+K[c])
+  };
+};
+
+/* 16 independent */
+GEN[15]=function(){
+  var a=ri(1,9)/10,b=ri(1,19)/20;
+  if(Math.random()<0.65){
+    return {html:'Events A and B are independent. P(A) = '+f(a)+' and P(B) = '+f(b)+'. Find P(A and B).',
+      parts:[numPart('P(A and B)',a*b)],
+      hint:'For independent events, multiply: P(A and B) = P(A) \u00d7 P(B).',
+      sol:'P(A and B) = P(A) \u00d7 P(B) = '+f(a)+' \u00d7 '+f(b)+' = '+f(a*b)+hl('Answer: '+f(a*b))};
+  }
+  return {html:'Events A and B are independent. P(A) = '+f(a)+' and P(A and B) = '+f(a*b)+'. Find P(B).',
+    parts:[numPart('P(B)',b)],
+    hint:'For independent events, P(A and B) = P(A) \u00d7 P(B). Divide to solve for P(B).',
+    sol:'P(B) = P(A and B) \u00f7 P(A) = '+f(a*b)+' \u00f7 '+f(a)+' = '+f(b)+hl('Answer: '+f(b))};
+};
+
+/* 17 addition rule */
+GEN[16]=function(){
+  var a,b,ab;do{a=ri(15,70);b=ri(10,60);ab=ri(3,Math.min(a,b)-2);}while(a+b-ab>98);
+  var A=a/100,B=b/100,AB=ab/100,U=(a+b-ab)/100,v=ri(0,2);
+  if(v===0)return {html:'P(A) = '+f(A)+', P(B) = '+f(B)+', and P(A and B) = '+f(AB)+'. Find P(A or B).',
+    parts:[numPart('P(A or B)',U)],hint:'Addition rule: P(A or B) = P(A) + P(B) \u2212 P(A and B). Subtract the overlap so it isn\u2019t counted twice.',
+    sol:'P(A or B) = '+f(A)+' + '+f(B)+' \u2212 '+f(AB)+' = '+f(U)+hl('Answer: '+f(U))};
+  if(v===1)return {html:'P(A) = '+f(A)+', P(B) = '+f(B)+', and P(A or B) = '+f(U)+'. Find P(A and B).',
+    parts:[numPart('P(A and B)',AB)],hint:'Start from P(A or B) = P(A) + P(B) \u2212 P(A and B) and solve for P(A and B).',
+    sol:'P(A and B) = P(A) + P(B) \u2212 P(A or B) = '+f(A)+' + '+f(B)+' \u2212 '+f(U)+' = '+f(AB)+hl('Answer: '+f(AB))};
+  return {html:'P(A) = '+f(A)+', P(A and B) = '+f(AB)+', and P(A or B) = '+f(U)+'. Find P(B).',
+    parts:[numPart('P(B)',B)],hint:'Start from P(A or B) = P(A) + P(B) \u2212 P(A and B) and solve for P(B).',
+    sol:'P(B) = P(A or B) \u2212 P(A) + P(A and B) = '+f(U)+' \u2212 '+f(A)+' + '+f(AB)+' = '+f(B)+hl('Answer: '+f(B))};
+};
+
+/* 18 true or false */
+GEN[17]=function(){
+  var bank=[
+    ['If A and B are independent events, then P(A and B) = 0.',false,'For independent events, P(A and B) = P(A) \u00d7 P(B), which is not 0 when both have positive probability. P(A and B) = 0 describes mutually exclusive events.'],
+    ['If A and B are mutually exclusive events, then P(A and B) = 0.',true,'Mutually exclusive events cannot happen at the same time, so their overlap has probability 0.'],
+    ['If A and B are independent events, then P(A and B) = P(A) \u00d7 P(B).',true,'This is the multiplication rule for independent events.'],
+    ['The probabilities in a discrete probability distribution must add to 1.',true,'This is one of the two conditions for a valid distribution (the other is that each probability is between 0 and 1).'],
+    ['A probability can be negative when an event is very unlikely.',false,'Probabilities are always between 0 and 1. A very unlikely event has a probability close to 0, not below it.'],
+    ['For any event A, P(A) + P(not A) = 1.',true,'An event and its complement together cover the whole sample space.'],
+    ['Two mutually exclusive events that each have positive probability are also independent.',false,'If one happens, the other cannot, so knowing one occurred changes the probability of the other to 0. They are dependent.'],
+    ['The number of customers waiting in line is a continuous random variable.',false,'It is a count (0, 1, 2, ...), so it is discrete.'],
+    ['The sample space for tossing two coins has 4 outcomes.',true,'S = {HH, HT, TH, TT}: 2 \u00d7 2 = 4 outcomes.'],
+    ['P(A | B) is always equal to P(B | A).',false,'The conditions are different groups, so the denominators differ. For example, P(cat | female) uses the female total, while P(female | cat) uses the cat total.'],
+    ['The mean of a discrete probability distribution is found with \u03a3 x \u00b7 P(x).',true,'The mean (expected value) is the sum of each value times its probability.'],
+    ['The standard deviation of a probability distribution can be negative.',false,'Standard deviation is the square root of the variance, so it is never negative.']];
+  var k=pick(bank);
+  return {html:'True or false: '+k[0],parts:[mcPart('',['True','False'],k[1]?0:1)],
+    hint:'Recall the definitions: mutually exclusive means no overlap; independent means one event does not change the other\u2019s probability.',
+    sol:k[2]+hl('Answer: '+(k[1]?'True':'False'))};
+};
+
+/* ---------- rendering ---------- */
+var Q={},uid=0,stats={att:0,ok:0},practiceTopic='mix',tab='practice',exam=null,examHistory=[],blankWarned=false;
+
+function makeQ(t){var q=GEN[t-1]();q.type=t;q.title=TITLES[t-1];q.points=PTS[t-1];q.id='q'+(uid++);Q[q.id]=q;return q;}
+
+function partHTML(q,p,i){
+  var pid=q.id+'_'+i,h='<div style="margin:12px 0 4px;">';
+  if(p.kind==='mc'){
+    if(p.label)h+='<div style="font-weight:600;margin-bottom:6px;">'+p.label+'</div>';
+    h+='<div id="'+pid+'_m" style="font-weight:700;"></div>';
+    p.opts.forEach(function(o,j){
+      h+='<label id="'+pid+'_l'+j+'" style="display:block;padding:8px 12px;margin:6px 0;border:2px solid '+C.line+';border-radius:6px;cursor:pointer;background:#fff;"><input type="radio" name="'+pid+'" value="'+j+'" style="margin:0 10px 0 0;vertical-align:middle;width:17px;height:17px;">'+String.fromCharCode(97+j)+'. '+o+'</label>';
+    });
+  }else{
+    h+='<label for="'+pid+'" style="display:inline-block;min-width:230px;margin:0 10px 4px 0;vertical-align:middle;">'+p.label+'</label>'+
+       '<input id="'+pid+'" type="text" autocomplete="off" spellcheck="false" style="'+ST.input+'" onkeydown="keyQ(event,\''+q.id+'\')">'+
+       '<span id="'+pid+'_m" style="display:inline-block;margin-left:10px;font-weight:700;vertical-align:middle;"></span>';
+  }
+  return h+'</div>';
+}
+
+function renderQ(q,mode,num){
+  var h='<div id="'+q.id+'" style="'+ST.card+'">';
+  h+='<div style="margin-bottom:10px;"><span style="font-size:18px;font-weight:700;">'+(num?num+'. ':'')+q.title+'</span>';
+  if(mode==='exam')h+=' <span id="'+q.id+'_pts" style="color:'+C.muted+';font-size:14px;">('+q.points+' points)</span>';
+  h+='</div><div>'+q.html+'</div>';
+  q.parts.forEach(function(p,i){h+=partHTML(q,p,i);});
+  if(q.parts.some(function(p){return p.kind==='num';}))h+='<div style="font-size:13px;color:'+C.muted+';margin-top:4px;">Enter a fraction (like 3/8) or a decimal (like 0.375). Round decimals to at least 2 places.</div>';
+  h+='<div id="'+q.id+'_fb" style="margin-top:10px;"></div>';
+  h+='<div id="'+q.id+'_hint" style="display:none;background:'+C.amberBg+';color:'+C.amber+';padding:10px 14px;border-radius:6px;margin-top:10px;"><b>Hint.</b> '+q.hint+'</div>';
+  if(mode==='practice'){
+    h+='<div style="margin-top:10px;"><button type="button" style="'+ST.btn+'" onclick="checkQ(\''+q.id+'\')">Check answer</button>'+
+       '<button type="button" style="'+ST.btn2+'" onclick="toggle(\''+q.id+'_hint\')">Hint</button>'+
+       '<button type="button" style="'+ST.btn2+'" onclick="toggle(\''+q.id+'_sol\')">Show solution</button>'+
+       '<button type="button" style="'+ST.btn2+'" onclick="practiceNew()">New problem</button></div>';
+  }
+  h+='<div id="'+q.id+'_sol" style="display:none;border-top:1px solid '+C.line+';margin-top:14px;padding-top:12px;"><div style="font-weight:700;margin-bottom:6px;">Worked solution</div>'+q.sol+'</div>';
+  return h+'</div>';
+}
+
+function toggle(id){var e=document.getElementById(id);e.style.display=e.style.display==='none'?'block':'none';}
+function keyQ(ev,id){if(ev.key==='Enter'&&tab==='practice')checkQ(id);}
+
+function readPart(q,i){
+  var p=q.parts[i],pid=q.id+'_'+i;
+  if(p.kind==='mc'){var r=document.querySelector('input[name="'+pid+'"]:checked');return r?Number(r.value):null;}
+  return document.getElementById(pid).value;
+}
+function gradePart(p,raw){
+  if(p.kind==='mc'){if(raw===null)return {ok:false,blank:true};return {ok:raw===p.correct,blank:false};}
+  var v=parseNum(raw);if(isNaN(v))return {ok:false,blank:String(raw).trim()==='',bad:String(raw).trim()!==''};
+  if(p.kind==='int')return {ok:Math.abs(v-p.ans)<1e-9,blank:false};
+  var ok=Math.abs(v-p.ans)<=p.tol+1e-9||(p.ans!==0&&Math.abs(v-p.ans)/Math.abs(p.ans)<=0.005);
+  return {ok:ok,blank:false};
+}
+function markPart(q,i,res,reveal){
+  var p=q.parts[i],pid=q.id+'_'+i,m=document.getElementById(pid+'_m');
+  if(res.blank){m.innerHTML='';if(p.kind!=='mc')document.getElementById(pid).style.borderColor='#9AA8BA';}
+  else{m.innerHTML=res.ok?'<span style="color:'+C.ok+';">\u2713 Correct</span>':'<span style="color:'+C.bad+';">\u2717 '+(res.bad?'Not a number':'Not yet')+'</span>';}
+  if(p.kind==='mc'){
+    for(var j=0;j<p.opts.length;j++){var l=document.getElementById(pid+'_l'+j),sel=readPart(q,i)===j;
+      l.style.borderColor=C.line;l.style.background='#fff';
+      if(sel&&!res.blank){l.style.borderColor=res.ok?C.ok:C.bad;l.style.background=res.ok?C.okBg:C.badBg;}
+      if(reveal&&j===p.correct&&!res.ok){l.style.borderColor=C.ok;l.style.background=C.okBg;}
+    }
+  }else if(!res.blank){var inp=document.getElementById(pid);inp.style.borderColor=res.ok?C.ok:C.bad;inp.style.background=res.ok?C.okBg:C.badBg;
+    if(reveal&&!res.ok)m.innerHTML+=' <span style="color:'+C.muted+';font-weight:400;">answer: '+f(p.ans)+'</span>';}
+  if(reveal&&res.blank&&p.kind!=='mc'){m.innerHTML='<span style="color:'+C.bad+';">Blank</span> <span style="color:'+C.muted+';font-weight:400;">answer: '+f(p.ans)+'</span>';}
+  if(reveal&&res.blank&&p.kind==='mc'){m.innerHTML='<span style="color:'+C.bad+';">Blank</span>';for(var k=0;k<p.opts.length;k++){if(k===p.correct){var lc=document.getElementById(pid+'_l'+k);lc.style.borderColor=C.ok;lc.style.background=C.okBg;}}}
+}
+function gradeQ(q,reveal){
+  var n=q.parts.length,ok=0,blank=0;
+  q.parts.forEach(function(p,i){var r=gradePart(p,readPart(q,i));if(r.ok)ok++;if(r.blank)blank++;markPart(q,i,r,reveal);});
+  return {ok:ok,n:n,blank:blank};
+}
+function checkQ(id){
+  var q=Q[id],g=gradeQ(q,false),fb=document.getElementById(id+'_fb');
+  if(g.blank===g.n){fb.innerHTML=msg('Enter an answer first.','info');return;}
+  if(!q.counted&&g.blank===0){q.counted=true;stats.att++;if(g.ok===g.n)stats.ok++;updStats();}
+  if(g.ok===g.n)fb.innerHTML=msg('Correct. Select New problem for another one like it.','ok');
+  else if(g.blank>0)fb.innerHTML=msg(g.ok+' of '+g.n+' parts correct so far. Fill in the remaining parts.','info');
+  else fb.innerHTML=msg(g.ok+' of '+g.n+(g.n===1?' part':' parts')+' correct. Try the marked '+(g.n-g.ok===1?'part':'parts')+' again, or open the hint.','bad');
+}
+function msg(t,k){var bg=k==='ok'?C.okBg:k==='bad'?C.badBg:C.soft,c=k==='ok'?C.ok:k==='bad'?C.bad:C.ink;return '<div style="background:'+bg+';color:'+c+';padding:10px 14px;border-radius:6px;font-weight:600;">'+t+'</div>';}
+function updStats(){var e=document.getElementById('stats');if(e)e.innerHTML=statsText();}
+function statsText(){return stats.att===0?'Your first-try results this session will appear here.':'First-try correct this session: <b>'+stats.ok+'</b> of <b>'+stats.att+'</b>';}
+
+/* ---------- tabs and views ---------- */
+function drawTabs(){
+  var t=[['learn','Key rules'],['practice','Practice by topic'],['exam','Practice exam']],h='';
+  t.forEach(function(x){var on=tab===x[0];
+    h+='<button type="button" onclick="go(\''+x[0]+'\')" style="display:inline-block;margin:0 6px 6px 0;padding:9px 18px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;border-radius:999px;border:2px solid '+(on?C.ink:C.line)+';background:'+(on?C.ink:'#fff')+';color:'+(on?'#fff':C.ink)+';">'+x[1]+'</button>';});
+  document.getElementById('tabs').innerHTML=h;
+}
+function go(t){tab=t;drawTabs();if(t==='learn')showLearn();if(t==='practice')showPractice();if(t==='exam')showExam();}
+
+function showLearn(){
+  var rows=[
+    ['Probability bounds','0 \u2264 P(A) \u2264 1','Any probability. Values outside 0 to 1 are impossible.'],
+    ['Sample space adds to 1','\u03a3 P(sample points) = 1','Finding a missing probability.'],
+    ['Simple probability','P(A) = (outcomes in A) \u00f7 (total outcomes)','Equally likely outcomes, counts in a list or table.'],
+    ['Complement','P(not A) = 1 \u2212 P(A)','"Not", "at least one", or easier to count the opposite.'],
+    ['Addition rule','P(A or B) = P(A) + P(B) \u2212 P(A and B)','Either event happens.'],
+    ['Mutually exclusive','P(A and B) = 0, so P(A or B) = P(A) + P(B)','Events that cannot happen together.'],
+    ['Independent','P(A and B) = P(A) \u00d7 P(B)','One event does not affect the other.'],
+    ['Conditional','P(A | B) = (count in A and B) \u00f7 (count in B)','"Given that" questions. The condition sets the denominator.'],
+    ['Valid distribution','each 0 \u2264 P(x) \u2264 1 and \u03a3 P(x) = 1','Checking a probability table.'],
+    ['Mean','\u03bc = \u03a3 x \u00b7 P(x)','Expected value of a discrete random variable.'],
+    ['Variance','\u03c3\u00b2 = \u03a3 (x \u2212 \u03bc)\u00b2 \u00b7 P(x)','Spread. Shortcut: \u03a3 x\u00b2\u00b7P(x) \u2212 \u03bc\u00b2.'],
+    ['Standard deviation','\u03c3 = \u221a(\u03c3\u00b2)','Spread in the same units as x.']];
+  var h='<div style="'+ST.card+'"><div style="font-family:Georgia,serif;font-size:22px;font-weight:700;margin-bottom:6px;">Rules you will use on Exam 2</div><div style="color:'+C.muted+';margin-bottom:6px;">Keep this tab open in your head while you practice.</div>'+tbl(['Rule','Formula','Use it for'],rows,true)+'</div>';
+  h+='<div style="'+ST.card+'"><div style="font-size:18px;font-weight:700;margin-bottom:6px;">Discrete or continuous?</div>A <b>discrete</b> random variable is counted: 0, 1, 2, 3, \u2026 (cups sold, students absent, heads in 3 tosses).<br>A <b>continuous</b> random variable is measured and can take any value in an interval (time, weight, height, temperature).</div>';
+  h+='<div style="'+ST.card+'"><div style="font-size:18px;font-weight:700;margin-bottom:6px;">How to practice</div><b>Practice by topic</b> gives one problem at a time with instant feedback, a hint, and a worked solution. Select New problem for fresh numbers as many times as you like.<br><b>Practice exam</b> builds all 18 question types with the same point values as Exam 2 and scores you out of 100. Every exam is different.'+
+     '<div style="margin-top:10px;"><button type="button" style="'+ST.btn+'" onclick="go(\'practice\')">Start practicing</button></div></div>';
+  document.getElementById('view').innerHTML=h;
+}
+
+function showPractice(){
+  var o='<option value="mix"'+(practiceTopic==='mix'?' selected':'')+'>Mixed: a random topic each time</option>';
+  TITLES.forEach(function(t,i){o+='<option value="'+(i+1)+'"'+(String(practiceTopic)===String(i+1)?' selected':'')+'>'+t+'</option>';});
+  document.getElementById('view').innerHTML='<div style="'+ST.card+'"><label for="topic" style="display:block;font-weight:700;margin-bottom:6px;">Choose a topic</label>'+
+    '<select id="topic" onchange="practiceTopic=this.value;practiceNew()" style="font-size:16px;padding:8px 10px;border:2px solid #9AA8BA;border-radius:6px;max-width:100%;font-family:inherit;color:'+C.ink+';background:#fff;">'+o+'</select>'+
+    '<div id="stats" style="margin-top:10px;color:'+C.muted+';font-size:15px;">'+statsText()+'</div></div><div id="pq"></div>';
+  practiceNew();
+}
+function practiceNew(){
+  var t=practiceTopic==='mix'?ri(1,18):Number(practiceTopic);
+  document.getElementById('pq').innerHTML=renderQ(makeQ(t),'practice');
+}
+
+function showExam(){
+  var v=document.getElementById('view');
+  if(!exam){
+    v.innerHTML='<div style="'+ST.card+'"><div style="font-family:Georgia,serif;font-size:22px;font-weight:700;margin-bottom:6px;">Practice exam</div>18 questions worth 100 points, matching the topics and point values of Exam 2. Answers are not checked until you submit. Parts of multi-part questions earn partial credit.'+
+      historyHTML()+'<div style="margin-top:10px;"><button type="button" style="'+ST.btn+'" onclick="newExam()">Start a practice exam</button></div></div>';
+    return;
+  }
+  var h='<div id="examTop"></div>';
+  exam.qs.forEach(function(q,i){h+=renderQ(q,'exam',i+1);});
+  h+='<div style="'+ST.card+'"><div id="submitMsg"></div><button type="button" id="submitBtn" style="'+ST.btn+'" onclick="submitExam()">Submit exam</button>'+
+     '<button type="button" style="'+ST.btn2+'" onclick="newExam()">Start over with a new exam</button></div>';
+  v.innerHTML=h;
+  drawExamTop();
+}
+function historyHTML(){if(!examHistory.length)return '';return '<div style="margin-top:10px;color:'+C.muted+';">Your scores this session: '+examHistory.map(function(s){return '<b style="color:'+C.ink+';">'+s+'</b>';}).join(', ')+'</div>';}
+function drawExamTop(){
+  var e=document.getElementById('examTop');
+  if(!exam.submitted){e.innerHTML='<div style="'+ST.card+'"><b>Practice exam in progress.</b> Work through all 18 questions, then select Submit exam at the bottom.'+historyHTML()+'</div>';return;}
+  var miss=exam.result.filter(function(r){return r.earned<r.q.points-1e-9;}).map(function(r,i){return r;});
+  var list=miss.length?'<div style="margin-top:8px;">Review these question types: '+miss.map(function(r){return '<a href="#'+r.q.id+'" style="color:'+C.teal+';">'+r.num+'. '+r.q.title+'</a>';}).join(', ')+'.</div>':'<div style="margin-top:8px;">Perfect score.</div>';
+  e.innerHTML='<div style="'+ST.card+'border:2px solid '+C.teal+';"><div style="font-size:14px;color:'+C.muted+';">Your score</div><div style="font-family:Georgia,serif;font-size:44px;font-weight:700;line-height:1.1;">'+exam.score+' <span style="font-size:22px;color:'+C.muted+';">/ 100</span></div>'+list+
+    '<div style="margin-top:6px;font-size:14px;color:'+C.muted+';">Each question below shows the correct answers and a worked solution.</div>'+historyHTML()+
+    '<div><button type="button" style="'+ST.btn+'" onclick="newExam()">Take a new practice exam</button></div></div>';
+}
+function newExam(){exam={qs:[],submitted:false};blankWarned=false;for(var t=1;t<=18;t++)exam.qs.push(makeQ(t));showExam();window.scrollTo(0,0);}
+function submitExam(){
+  if(exam.submitted)return;
+  var blanks=0;
+  exam.qs.forEach(function(q){q.parts.forEach(function(p,i){if(gradePart(p,readPart(q,i)).blank)blanks++;});});
+  if(blanks>0&&!blankWarned){blankWarned=true;document.getElementById('submitMsg').innerHTML=msg('You have '+blanks+' blank '+(blanks===1?'part':'parts')+'. Select Submit exam again to grade anyway.','info');return;}
+  var total=0;exam.result=[];
+  exam.qs.forEach(function(q,i){
+    var g=gradeQ(q,true),earned=rd(q.points*g.ok/g.n,1);total+=earned;
+    exam.result.push({q:q,earned:earned,num:i+1});
+    var full=earned>=q.points-1e-9;
+    document.getElementById(q.id+'_pts').innerHTML='<span style="color:'+(full?C.ok:C.bad)+';font-weight:700;">'+f(earned,1)+' / '+q.points+' points</span>';
+    document.getElementById(q.id+'_sol').style.display='block';
+    var ins=document.getElementById(q.id).getElementsByTagName('input');for(var k=0;k<ins.length;k++)ins[k].disabled=true;
+  });
+  exam.score=f(rd(total,1),1);exam.submitted=true;examHistory.push(exam.score);
+  document.getElementById('submitMsg').innerHTML='';document.getElementById('submitBtn').style.display='none';
+  drawExamTop();window.scrollTo(0,0);
+}
+
+drawTabs();go('practice');
+</script>
+</body>
+</html>
